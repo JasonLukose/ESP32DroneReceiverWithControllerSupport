@@ -1,4 +1,16 @@
 #include <Bluepad32.h>
+#include "sbus.h"
+
+/* Define and setup SBUS Rx and Tx objects
+   Inverted serial logic with a baud rate of 100000, 8 data bits, even parity, and 2 stop bits.
+*/
+#define SBUS_RX 16 // ESP32
+#define SBUS_TX 17 // ESP32
+
+bfs::SbusTx sbus_tx(&Serial2, SBUS_RX, SBUS_TX, true); // Set up TX SBUS using inverted serial logic to conform to SBUS standard
+
+/* SBUS data */
+bfs::SbusData data;
 
 ControllerPtr myControllers[BP32_MAX_GAMEPADS];
 
@@ -71,6 +83,17 @@ void processGamepad(ControllerPtr ctl) {
 // Arduino setup function. Runs in CPU 1
 void setup() {
     Serial.begin(115200);
+    /* Begin the SBUS communication */
+    sbus_tx.Begin();
+      data.ch[0] = static_cast<uint8_t>('e');
+      data.ch[1] = 0;
+      data.ch[2] = 0;
+      data.ch[3] = 0;
+      data.ch[4] = 0;
+      sbus_tx.data(data);
+      sbus_tx.Write();
+    delay(1500);
+    
     Serial.printf("Firmware: %s\n", BP32.firmwareVersion());
     const uint8_t* addr = BP32.localBdAddress();
     Serial.printf("BD Addr: %2X:%2X:%2X:%2X:%2X:%2X\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
@@ -116,6 +139,17 @@ void loop() {
             // See ArduinoController.h for all the available functions.
         }
     }
+      
+      data.ch[0] = static_cast<uint8_t>('e');
+      Serial.println(data.ch[0] & 0x07FF, BIN);
+      
+      data.ch[1] = 0;
+      data.ch[2] = 0;
+      data.ch[3] = 0;
+      data.ch[4] = 0;
+      sbus_tx.data(data);
+      sbus_tx.Write();
+    
     // The main loop must have some kind of "yield to lower priority task" event.
     // Otherwise the watchdog will get triggered.
     // If your main loop doesn't have one, just add a simple `vTaskDelay(1)`.
@@ -123,5 +157,5 @@ void loop() {
     // https://stackoverflow.com/questions/66278271/task-watchdog-got-triggered-the-tasks-did-not-reset-the-watchdog-in-time
 
     // vTaskDelay(1);
-    delay(150);
+    delay(1500);
 }
