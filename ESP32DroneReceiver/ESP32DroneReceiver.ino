@@ -7,6 +7,7 @@
 #define SBUS_RX 16 // ESP32
 #define SBUS_TX 17 // ESP32
 
+bfs::SbusRx sbus_rx(&Serial2, SBUS_RX, SBUS_TX, true); // Set up RX SBUS using inverted serial logic to conform to SBUS standard
 bfs::SbusTx sbus_tx(&Serial2, SBUS_RX, SBUS_TX, true); // Set up TX SBUS using inverted serial logic to conform to SBUS standard
 
 /* SBUS data */
@@ -191,6 +192,20 @@ void loop() {
         if (myController && myController->isConnected()) {
             if (myController->isGamepad()) {
                 processGamepad(myController);
+
+                // Read on RX pin if it's connected to TX with wiring
+                if (sbus_rx.Read()) {
+                  bfs::SbusData recievedData = sbus_rx.data();
+                  Serial.println("=========================================================================================================");
+                  Serial.println("SBUS data recieved on RX pin, data should match data sent on TX pin");
+
+                  Serial.println(recievedData.ch[0] & 0x07FF, BIN);
+                  Serial.println(recievedData.ch[1] & 0x07FF, BIN);
+                  Serial.println(recievedData.ch[2] & 0x07FF, BIN);
+                  Serial.println(recievedData.ch[3] & 0x07FF, BIN);
+                  Serial.println("=========================================================================================================");
+                }
+                
             } else {
                 Serial.printf("Data not available yet\n");
                 continue;
